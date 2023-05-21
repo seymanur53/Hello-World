@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Seyma'nın Hayali</title>
+  <style>
+    #game-area {
+      width: 400px;
+      height: 300px;
+      background-color: #e0e0e0;
+      position: relative;
+    }
+
+    #player {
+      width: 80px;
+      height: 107px;
+      background-image: url('seyma.jpg.jpg');
+      position: absolute;
+      bottom: 0;
+      left: 0;
+    }
+
+    .obstacle {
+      width: 80px;
+      height: 20px;
+      background-color: green;
+      position: absolute;
+      bottom: 0;
+    }
+
+    #score {
+      margin-top: 20px;
+    }
+
+    #start-button {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <h1>Seyma Firarda</h1>
+  <div id="game-area">
+    <div id="player"></div>
+  </div>
+  <p id="score">Puan: <span id="score-value">0</span></p>
+  <button id="start-button" onclick="startGame()">Başlat</button>
+
+  <script>
+    var player = document.getElementById('player');
+    var gameArea = document.getElementById('game-area');
+    var positionX = 0;
+    var positionY = 0;
+    var jumping = false; // Zıplama durumunu takip etmek için bir flag
+    var gameRunning = false;
+    var scoreValue = 0;
+    var obstacleInterval;
+
+    function movePlayer() {
+      player.style.left = positionX + 'px';
+      player.style.bottom = positionY + 'px';
+    }
+
+    document.addEventListener('keydown', function(event) {
+      switch (event.keyCode) {
+        case 37: // Sol tuş
+          positionX -= 10;
+          movePlayer();
+          break;
+        case 39: // Sağ tuş
+          positionX += 10;
+          movePlayer();
+          break;
+        case 32: // Space tuşu
+          jump();
+          break;
+      }
+    });
+
+    function jump() {
+      if (!jumping) {
+        jumping = true;
+        var jumpCount = 0;
+        var jumpInterval = setInterval(function() {
+          var playerBottom = parseInt(window.getComputedStyle(player).getPropertyValue("bottom"));
+          if (jumpCount < 15) {
+            player.style.bottom = (playerBottom + 4) + "px";
+            jumpCount++;
+          } else if (jumpCount >= 15 && jumpCount < 30) {
+            player.style.bottom = (playerBottom - 4) + "px";
+            jumpCount++;
+          } else {
+            jumping = false;
+            clearInterval(jumpInterval);
+          }
+        }, 15);
+      }
+    }
+
+    // Engel oluşturma
+    function createObstacle() {
+      if (gameRunning) {
+        var obstacle = document.createElement("div");
+        obstacle.classList.add("obstacle");
+        obstacle.style.left = "400px";
+        gameArea.appendChild(obstacle);
+        moveObstacle(obstacle);
+      }
+    }
+
+    // Engel hareketi
+    function moveObstacle(obstacle) {
+      var obstacleLeft = 400;
+      var obstacleInterval = setInterval(function() {
+        obstacleLeft -= 4;
+        obstacle.style.left = obstacleLeft + "px";
+
+        // Mario ile çarpışma kontrolü
+        var playerBottom = parseInt(window.getComputedStyle(player).getPropertyValue("bottom"));
+        var playerLeft = parseInt(window.getComputedStyle(player).getPropertyValue("left"));
+        var playerRight = playerLeft + player.offsetWidth;
+        var obstacleTop = parseInt(window.getComputedStyle(obstacle).getPropertyValue("bottom"));
+        var obstacleLeft = parseInt(window.getComputedStyle(obstacle).getPropertyValue("left"));
+        var obstacleRight = obstacleLeft + obstacle.offsetWidth;
+
+        if (playerBottom <= obstacleTop && playerRight >= obstacleLeft && playerLeft <= obstacleRight) {
+          endGame();
+        }
+
+        // Engelin ekran dışına çıkması
+        if (obstacleLeft <= 0) {
+          obstacle.remove();
+          clearInterval(obstacleInterval);
+        }
+      }, 10);
+    }
+
+    // Engelleri hareket ettirme
+    function moveObstacles() {
+      var obstacles = document.querySelectorAll(".obstacle");
+      obstacles.forEach(function(obstacle) {
+        var obstacleLeft = parseInt(window.getComputedStyle(obstacle).getPropertyValue("left"));
+        if (obstacleLeft > 0) {
+          obstacle.style.left = (obstacleLeft - 4) + "px";
+
+          var playerBottom = parseInt(window.getComputedStyle(player).getPropertyValue("bottom"));
+          var playerLeft = parseInt(window.getComputedStyle(player).getPropertyValue("left"));
+          var playerRight = playerLeft + player.offsetWidth;
+          var obstacleTop = parseInt(window.getComputedStyle(obstacle).getPropertyValue("bottom"));
+          var obstacleLeft = parseInt(window.getComputedStyle(obstacle).getPropertyValue("left"));
+          var obstacleRight = obstacleLeft + obstacle.offsetWidth;
+
+          if (playerBottom <= obstacleTop && playerRight >= obstacleLeft && playerLeft <= obstacleRight) {
+            endGame();
+          }
+        } else {
+          obstacle.remove();
+        }
+      });
+
+      if (gameRunning) {
+        setTimeout(moveObstacles, 10);
+      }
+    }
+
+    // Oyunu başlatma
+    function startGame() {
+      var startButton = document.getElementById('start-button');
+      startButton.style.display = "none";
+      gameRunning = true;
+      obstacleInterval = setInterval(createObstacle, 1500); // Her 1.5 saniyede bir engel oluşturur
+      moveObstacles();
+    }
+
+    // Oyunu bitirme
+    function endGame() {
+      gameRunning = false;
+      alert("Oyun bitti! Puanınız: " + scoreValue);
+      positionX = 0;
+      positionY = 0;
+      scoreValue = 0;
+      player.style.bottom = positionY + "px";
+      player.style.left = positionX + "px";
+      document.getElementById("score-value").textContent = scoreValue;
+      var obstacles = document.querySelectorAll(".obstacle");
+      obstacles.forEach(function(obstacle) {
+        obstacle.remove();
+      });
+      var startButton = document.getElementById('start-button');
+      startButton.style.display = "block";
+      clearInterval(obstacleInterval);
+    }
+  </script>
+</body>
+</html>
